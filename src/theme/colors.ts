@@ -1,0 +1,16 @@
+export const colors = {
+  bg: '#071412',
+  bgElevated: '#0D221E',
+  bgSoft: '#12332D',
+  ink: '#E7EEEB',
+  inkMuted: '#8FA8A1',
+  inkDim: '#5E776F',
+  brand: '#2F9B86',
+  brandSoft: '#1E6B5C',
+  brandGlow: 'rgba(47, 155, 134, 0.35)',
+  alert: '#E4574C',
+  alertSoft: 'rgba(228, 87, 76, 0.18)',
+  warn: '#E0A045',
+  line: 'rgba(231, 238, 235, 0.08)',
+  white: '#FFFFFF',
+} as const;

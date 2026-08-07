@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Union",
+    "slug": "union-sound-guard",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "union",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Union listens on-device for screams, distress sounds, and your verbal safe-word to start a silent evidence recorder.",
+        "UIBackgroundModes": ["audio"]
+      },
+      "bundleIdentifier": "com.union.soundguard"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#071412",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "RECORD_AUDIO",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MICROPHONE"
+      ],
+      "package": "com.union.soundguard",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Union to access your microphone for on-device scream, distress, and safe-word detection."
+        }
+      ]
+    ]
+  }
+}
