@@ -14,7 +14,7 @@ When a pattern is detected, Union **silently starts a local evidence recorder** 
 
 ## Stack
 
-- Expo / React Native (iOS, Android, web)
+- Expo SDK 54 / React Native (compatible with current App Store Expo Go)
 - `expo-av` metering on native
 - Web Audio `AnalyserNode` on web
 - Web Speech API for safe-word recognition (web)
@@ -25,12 +25,12 @@ When a pattern is detected, Union **silently starts a local evidence recorder** 
 ```bash
 npm install
 npm run web      # browser demo (mic + speech)
-npm start        # Expo Go / emulator
+npm start        # Expo Go / emulator (SDK 54)
 npm run android
 npm run ios
 ```
 
-Allow microphone access when prompted. Use **Test triggers** if the mic or speech API is unavailable.
+Use the **Expo Go** app from the App Store / Play Store (SDK 54). Allow microphone access when prompted. Use **Test triggers** if the mic or speech API is unavailable.
 
 ## Project layout
 

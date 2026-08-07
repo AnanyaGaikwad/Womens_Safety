@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   atmosphere: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.bg,
   },
   atmosphereWash: {
