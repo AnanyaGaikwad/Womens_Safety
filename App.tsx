@@ -57,7 +57,7 @@ export default function App() {
     );
   }
 
-  const listening = guard.status === 'listening' || guard.status === 'triggered';
+  const listening = guard.armed;
 
   return (
     <View style={styles.root}>

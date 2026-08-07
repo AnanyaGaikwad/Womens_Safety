@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import { colors } from '../theme/colors';
 import { GuardStatus } from '../types/detection';
 
@@ -7,6 +7,8 @@ type Props = {
   level: number;
   status: GuardStatus;
 };
+
+const useNativeDriver = Platform.OS !== 'web';
 
 export function ListeningOrb({ level, status }: Props) {
   const pulse = useRef(new Animated.Value(0)).current;
@@ -20,13 +22,13 @@ export function ListeningOrb({ level, status }: Props) {
           toValue: 1,
           duration: 1800,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.timing(pulse, {
           toValue: 0,
           duration: 1800,
           easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ])
     );
@@ -38,7 +40,7 @@ export function ListeningOrb({ level, status }: Props) {
     Animated.timing(meter, {
       toValue: Math.max(0.08, Math.min(1, level)),
       duration: 90,
-      useNativeDriver: true,
+      useNativeDriver,
     }).start();
   }, [level, meter]);
 
@@ -52,12 +54,12 @@ export function ListeningOrb({ level, status }: Props) {
         Animated.timing(alertFlash, {
           toValue: 1,
           duration: 420,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.timing(alertFlash, {
           toValue: 0.25,
           duration: 420,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ])
     );

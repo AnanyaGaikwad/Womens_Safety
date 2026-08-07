@@ -21,6 +21,7 @@ function makeId() {
 
 export function useSoundGuard() {
   const [status, setStatus] = useState<GuardStatus>('idle');
+  const [armed, setArmed] = useState(false);
   const [level, setLevel] = useState(0);
   const [db, setDb] = useState(-160);
   const [settings, setSettings] = useState<GuardSettings>(DEFAULT_SETTINGS);
@@ -34,6 +35,10 @@ export function useSoundGuard() {
   const evidenceRef = useRef(new EvidenceRecorder());
   const settingsRef = useRef(settings);
   const handlingRef = useRef(false);
+  const armedRef = useRef(false);
+  const handleDetectionRef = useRef<
+    ((kind: DetectionKind, confidence: number, note: string) => Promise<void>) | null
+  >(null);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -59,16 +64,28 @@ export function useSoundGuard() {
     };
   }, []);
 
+  const attachMonitorListeners = useCallback((monitor: SoundMonitor) => {
+    monitor.setListeners({
+      onLevel: (normalized, measuredDb) => {
+        setLevel(normalized);
+        setDb(measuredDb);
+      },
+      onDetection: (kind, confidence, note) => {
+        void handleDetectionRef.current?.(kind, confidence, note);
+      },
+      onError: (message) => setError(message),
+    });
+  }, []);
+
   const handleDetection = useCallback(
     async (kind: DetectionKind, confidence: number, note: string) => {
       if (handlingRef.current) return;
       handlingRef.current = true;
       setStatus('triggered');
 
-      // Native platforms allow only one active recorder — pause monitoring first.
-      const shouldResume = Boolean(monitorRef.current);
-      if (shouldResume) {
-        await monitorRef.current?.stop();
+      const shouldResume = armedRef.current;
+      if (monitorRef.current) {
+        await monitorRef.current.stop();
         monitorRef.current = null;
       }
 
@@ -96,7 +113,6 @@ export function useSoundGuard() {
         return next;
       });
 
-      // Keep a short silent evidence clip, then resume listening.
       setTimeout(async () => {
         const finalUri = await evidenceRef.current.stop();
         if (finalUri) {
@@ -113,24 +129,17 @@ export function useSoundGuard() {
         }
         setRecordingEvidence(false);
 
-        if (shouldResume) {
+        if (shouldResume && armedRef.current) {
           try {
             const monitor = new SoundMonitor(settingsRef.current);
-            monitor.setListeners({
-              onLevel: (normalized, measuredDb) => {
-                setLevel(normalized);
-                setDb(measuredDb);
-              },
-              onDetection: (nextKind, nextConfidence, nextNote) => {
-                void handleDetection(nextKind, nextConfidence, nextNote);
-              },
-              onError: (message) => setError(message),
-            });
+            attachMonitorListeners(monitor);
             await monitor.start();
             monitorRef.current = monitor;
             setStatus('listening');
           } catch (err) {
             setStatus('error');
+            setArmed(false);
+            armedRef.current = false;
             setError(
               err instanceof Error
                 ? err.message
@@ -144,37 +153,38 @@ export function useSoundGuard() {
         handlingRef.current = false;
       }, 12000);
     },
-    []
+    [attachMonitorListeners]
   );
+
+  useEffect(() => {
+    handleDetectionRef.current = handleDetection;
+  }, [handleDetection]);
 
   const start = useCallback(async () => {
     setError(null);
     setStatus('requesting_permission');
 
     const monitor = new SoundMonitor(settingsRef.current);
-    monitor.setListeners({
-      onLevel: (normalized, measuredDb) => {
-        setLevel(normalized);
-        setDb(measuredDb);
-      },
-      onDetection: (kind, confidence, note) => {
-        void handleDetection(kind, confidence, note);
-      },
-      onError: (message) => setError(message),
-    });
+    attachMonitorListeners(monitor);
 
     try {
       await monitor.start();
       monitorRef.current = monitor;
+      armedRef.current = true;
+      setArmed(true);
       setStatus('listening');
     } catch (err) {
+      armedRef.current = false;
+      setArmed(false);
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Failed to start listening.');
       monitorRef.current = null;
     }
-  }, [handleDetection]);
+  }, [attachMonitorListeners]);
 
   const stop = useCallback(async () => {
+    armedRef.current = false;
+    setArmed(false);
     await monitorRef.current?.stop();
     monitorRef.current = null;
     await evidenceRef.current.stop();
@@ -186,7 +196,10 @@ export function useSoundGuard() {
   }, []);
 
   const updateSafeWord = useCallback(async (safeWord: string) => {
-    const next = { ...settingsRef.current, safeWord: safeWord.trim() || DEFAULT_SETTINGS.safeWord };
+    const next = {
+      ...settingsRef.current,
+      safeWord: safeWord.trim() || DEFAULT_SETTINGS.safeWord,
+    };
     settingsRef.current = next;
     setSettings(next);
     await saveSettings(next);
@@ -201,7 +214,10 @@ export function useSoundGuard() {
 
   const dismissTrigger = useCallback(() => {
     setLastTrigger(null);
-    setStatus((current) => (current === 'triggered' ? 'listening' : current));
+    setStatus((current) => {
+      if (current !== 'triggered') return current;
+      return armedRef.current ? 'listening' : 'idle';
+    });
   }, []);
 
   const simulate = useCallback(
@@ -224,6 +240,7 @@ export function useSoundGuard() {
   return {
     ready,
     status,
+    armed,
     level,
     db,
     settings,
