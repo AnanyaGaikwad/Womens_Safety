@@ -5,7 +5,7 @@
  * (those remain at the project root for native/dev-build push credentials).
  */
 export const firebaseConfig = {
-  apiKey: 'AIzaSyDb1Db102w074USsiidGXh8V2yDuUJd_SEpw',
+  apiKey: 'AIzaSyDb102owO74USsiidGXh8V2yDuUJd_SEpw',
   authDomain: 'union-7183a.firebaseapp.com',
   projectId: 'union-7183a',
   storageBucket: 'union-7183a.firebasestorage.app',
