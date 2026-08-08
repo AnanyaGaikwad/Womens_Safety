@@ -19,14 +19,22 @@ When a pattern is detected, Union **silently starts a local evidence recorder** 
 - Local AsyncStorage persistence
 - `GuardianService.notifyGuardians()` stub for future emergency alerts
 
+### Sprint 3 — Detection → Guardian alert pipeline
+- GPS via `expo-location` (continues if permission denied)
+- `AlertService.triggerEmergency()` after scream / distress / safe-word
+- Simulated per-guardian delivery (console + local banners)
+- Emergency Active screen + alert history (local only)
+- Tab bar safe-area spacing for iPhone home indicator
+
 ## Stack
 
 - Expo SDK 54 / React Native (compatible with current App Store Expo Go)
-- React Navigation bottom tabs (Guard · Guardians)
+- React Navigation stack + bottom tabs (Guard · Guardians · Alert screens)
 - `expo-av` metering on native
+- `expo-location` for emergency GPS
 - Web Audio `AnalyserNode` on web
 - Web Speech API for safe-word recognition (web)
-- AsyncStorage for settings, detection history, and guardians
+- AsyncStorage for settings, detection history, guardians, and alerts
 
 ## Run
 
@@ -45,12 +53,12 @@ Use the **Expo Go** app from the App Store / Play Store (SDK 54). Allow micropho
 ```
 App.tsx
 src/
-  components/           # sound guard UI
+  components/           # sound guard UI + delivery banners
   components/guardians/ # GuardianCard, form, stats, empty state
-  hooks/                # useSoundGuard, useGuardians
-  navigation/           # bottom tabs
-  screens/              # SoundGuardScreen, GuardiansScreen
-  services/             # audio + GuardianService
+  hooks/                # useSoundGuard, useGuardians, emergency session
+  navigation/           # stack + bottom tabs
+  screens/              # Guard, Guardians, Emergency Alert, Alert History
+  services/             # audio + guardians + location + alerts
   theme/
   types/
 ```

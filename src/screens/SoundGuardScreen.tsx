@@ -7,25 +7,35 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AlertBanner } from '../components/AlertBanner';
 import { EventLog } from '../components/EventLog';
 import { LevelMeter } from '../components/LevelMeter';
 import { ListeningOrb } from '../components/ListeningOrb';
 import { SafeWordField } from '../components/SafeWordField';
-import { useSoundGuard } from '../hooks/useSoundGuard';
+import { useSoundGuardContext } from '../hooks/SoundGuardContext';
+import { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
 
 /**
  * Sprint 1 sound detection screen.
- * Audio detection services/hooks are unchanged; this is a UI extract only.
+ * Extended in Sprint 3 to open the emergency alert pipeline UI.
  */
 export function SoundGuardScreen() {
-  const guard = useSoundGuard();
+  const guard = useSoundGuardContext();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [draftSafeWord, setDraftSafeWord] = useState(guard.settings.safeWord);
 
   useEffect(() => {
     setDraftSafeWord(guard.settings.safeWord);
   }, [guard.settings.safeWord]);
+
+  useEffect(() => {
+    if (!guard.activeAlert) return;
+    navigation.navigate('EmergencyAlert');
+  }, [guard.activeAlert?.id, navigation]);
 
   const statusCopy = useMemo(() => {
     switch (guard.status) {
@@ -125,6 +135,13 @@ export function SoundGuardScreen() {
           <View style={styles.section}>
             <EventLog events={guard.events} onClear={() => void guard.clearEvents()} />
           </View>
+
+          <Pressable
+            onPress={() => navigation.navigate('AlertHistory')}
+            style={({ pressed }) => [styles.historyLink, pressed && styles.pressed]}
+          >
+            <Text style={styles.historyLinkText}>Alert history</Text>
+          </Pressable>
 
           <Text style={styles.footer}>
             Local-only MVP. Mesh alarms and encrypted location broadcast come later.
@@ -254,6 +271,17 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans_400Regular',
     fontSize: 14,
     lineHeight: 20,
+  },
+  historyLink: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  historyLinkText: {
+    color: colors.brand,
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 14,
   },
   footer: {
     color: colors.inkDim,
