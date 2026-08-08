@@ -129,6 +129,7 @@ async function main() {
   try {
     await checkLiveRegistration();
     console.log('registration checks passed');
+    process.exit(0);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (
