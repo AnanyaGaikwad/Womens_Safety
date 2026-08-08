@@ -119,6 +119,27 @@ export function getLastRegistrationResult(): RegistrationResult | null {
   return lastResult;
 }
 
+/** Keep in-memory registration cache in sync after profile edits. */
+export function patchLastRegisteredUser(user: UnionUser) {
+  if (!lastResult) {
+    lastResult = {
+      user,
+      authUid: user.uid,
+      registered: true,
+      skipped: false,
+      error: null,
+    };
+    return;
+  }
+  lastResult = {
+    ...lastResult,
+    user,
+    authUid: user.uid,
+    registered: true,
+    error: null,
+  };
+}
+
 /** Test helper — clears in-memory registration de-dupe state. */
 export function resetRegistrationStateForTests() {
   registrationPromise = null;

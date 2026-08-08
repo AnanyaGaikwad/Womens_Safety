@@ -1,6 +1,7 @@
 export type RootTabParamList = {
   SoundGuard: undefined;
   Guardians: undefined;
+  Profile: undefined;
 };
 
 export type RootStackParamList = {

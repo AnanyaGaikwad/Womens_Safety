@@ -2,6 +2,7 @@ import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GuardiansScreen } from '../screens/GuardiansScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
 import { SoundGuardScreen } from '../screens/SoundGuardScreen';
 import { colors } from '../theme/colors';
 import { RootTabParamList } from './types';
@@ -69,6 +70,16 @@ export function RootTabs() {
           title: 'Guardians',
           tabBarLabel: ({ focused }) => (
             <TabLabel label="Guardians" focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: 'Profile',
+          tabBarLabel: ({ focused }) => (
+            <TabLabel label="Profile" focused={focused} />
           ),
         }}
       />

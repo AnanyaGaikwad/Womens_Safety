@@ -4,6 +4,7 @@ import {
   serverTimestamp,
   setDoc,
   Timestamp,
+  updateDoc,
 } from 'firebase/firestore';
 import { defaultDisplayName, UnionUser } from '../types/user';
 import { getFirebaseFirestore, isFirebaseReady } from './firebase';
@@ -92,5 +93,52 @@ export async function getUserDocument(uid: string): Promise<UnionUser | null> {
       error instanceof Error ? error.message : error
     );
     return null;
+  }
+}
+
+/**
+ * Update only displayName on users/{uid}. Never touches createdAt or uid.
+ */
+export async function updateDisplayName(
+  uid: string,
+  displayName: string
+): Promise<UnionUser | null> {
+  if (!isFirebaseReady()) return null;
+  const db = getFirebaseFirestore();
+  if (!db) return null;
+
+  const trimmed = displayName.trim();
+  if (!trimmed) {
+    throw new Error('Display name is required.');
+  }
+  if (trimmed.length > 60) {
+    throw new Error('Display name must be 60 characters or fewer.');
+  }
+
+  try {
+    const ref = doc(db, 'users', uid);
+    const existing = await getDoc(ref);
+    if (!existing.exists()) {
+      throw new Error('User profile not found.');
+    }
+
+    await updateDoc(ref, { displayName: trimmed });
+    const updated = await getDoc(ref);
+    if (!updated.exists()) return null;
+    return mapUserDoc(uid, updated.data() as Record<string, unknown>);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Display name')) {
+      throw error;
+    }
+    if (error instanceof Error && error.message.includes('User profile')) {
+      throw error;
+    }
+    console.warn(
+      '[Union UserService] Failed to update display name.',
+      error instanceof Error ? error.message : error
+    );
+    throw new Error(
+      error instanceof Error ? error.message : 'Failed to update display name.'
+    );
   }
 }
