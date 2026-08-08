@@ -13,6 +13,7 @@ import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif'
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ensureAnonymousRegistration } from './src/services/AuthService';
 import { initializeFirebase } from './src/services/firebase';
+import { ensurePushTokenRegistration } from './src/services/PushService';
 import { colors } from './src/theme/colors';
 
 // Milestone 1: soft-fail Firebase JS SDK bootstrap (Auth + Firestore).
@@ -39,9 +40,15 @@ export default function App() {
     InstrumentSerif_400Regular,
   });
 
-  // Milestone 2: anonymous auth + users/{uid} upsert (non-blocking, soft-fail).
+  // Milestone 2–4: anonymous auth, then soft-fail Expo push token registration.
   useEffect(() => {
-    void ensureAnonymousRegistration();
+    void (async () => {
+      const registration = await ensureAnonymousRegistration();
+      const uid = registration.authUid ?? registration.user?.uid;
+      if (uid) {
+        await ensurePushTokenRegistration(uid);
+      }
+    })();
   }, []);
 
   if (!fontsLoaded) {

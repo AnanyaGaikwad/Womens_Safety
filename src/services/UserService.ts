@@ -31,6 +31,8 @@ function mapUserDoc(uid: string, data: Record<string, unknown>): UnionUser {
         ? data.displayName
         : defaultDisplayName(uid),
     createdAt: createdAtToMillis(data.createdAt),
+    expoPushToken:
+      typeof data.expoPushToken === 'string' ? data.expoPushToken : null,
   };
 }
 
@@ -140,5 +142,39 @@ export async function updateDisplayName(
     throw new Error(
       error instanceof Error ? error.message : 'Failed to update display name.'
     );
+  }
+}
+
+/**
+ * Save Expo push token on users/{uid}. Does not modify createdAt or displayName.
+ */
+export async function saveExpoPushToken(
+  uid: string,
+  expoPushToken: string
+): Promise<UnionUser | null> {
+  if (!isFirebaseReady()) return null;
+  const db = getFirebaseFirestore();
+  if (!db) return null;
+
+  const token = expoPushToken.trim();
+  if (!token) return null;
+
+  try {
+    const ref = doc(db, 'users', uid);
+    const existing = await getDoc(ref);
+    if (!existing.exists()) {
+      throw new Error('User profile not found.');
+    }
+
+    await updateDoc(ref, { expoPushToken: token });
+    const updated = await getDoc(ref);
+    if (!updated.exists()) return null;
+    return mapUserDoc(uid, updated.data() as Record<string, unknown>);
+  } catch (error) {
+    console.warn(
+      '[Union UserService] Failed to save Expo push token.',
+      error instanceof Error ? error.message : error
+    );
+    return null;
   }
 }

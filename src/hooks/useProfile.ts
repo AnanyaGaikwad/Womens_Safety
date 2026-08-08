@@ -9,6 +9,11 @@ import {
   getFirebaseStatus,
   isFirebaseReady,
 } from '../services/firebase';
+import {
+  ensurePushTokenRegistration,
+  getLastPushRegistrationResult,
+  NotificationStatusLabel,
+} from '../services/PushService';
 import { updateDisplayName } from '../services/UserService';
 import { UnionUser } from '../types/user';
 
@@ -18,7 +23,7 @@ export type RegistrationStatusLabel =
   | 'Unavailable'
   | 'Error';
 
-export type NotificationStatusLabel = 'Not configured';
+export type { NotificationStatusLabel };
 
 export function useProfile() {
   const [ready, setReady] = useState(false);
@@ -28,9 +33,10 @@ export function useProfile() {
   const [unionId, setUnionId] = useState<string | null>(null);
   const [registrationStatus, setRegistrationStatus] =
     useState<RegistrationStatusLabel>('Pending');
+  const [notificationStatus, setNotificationStatus] =
+    useState<NotificationStatusLabel>('Not configured');
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const notificationStatus: NotificationStatusLabel = 'Not configured';
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -41,6 +47,8 @@ export function useProfile() {
         setUser(null);
         setUnionId(null);
         setRegistrationStatus('Unavailable');
+        setNotificationStatus('Not configured');
+        setExpoPushToken(null);
         setError(getFirebaseError());
         return;
       }
@@ -55,24 +63,43 @@ export function useProfile() {
         setUser(null);
         setUnionId(result.authUid);
         setRegistrationStatus('Unavailable');
+        setNotificationStatus('Not configured');
+        setExpoPushToken(null);
         setError(result.error);
         return;
       }
 
       if (result.registered && result.user) {
-        setUser(result.user);
-        setUnionId(result.authUid ?? result.user.uid);
+        const uid = result.authUid ?? result.user.uid;
+        setUnionId(uid);
         setRegistrationStatus('Registered');
-        setError(null);
+
+        const push = await ensurePushTokenRegistration(uid);
+        const nextUser: UnionUser = {
+          ...result.user,
+          expoPushToken: push.token ?? result.user.expoPushToken ?? null,
+        };
+        if (push.token) {
+          patchLastRegisteredUser(nextUser);
+        }
+        setUser(nextUser);
+        setNotificationStatus(push.status);
+        setExpoPushToken(push.token);
+        setError(push.error && push.status !== 'Configured' ? push.error : null);
         return;
       }
 
       setUser(result.user);
       setUnionId(result.authUid);
       setRegistrationStatus(result.error ? 'Error' : 'Pending');
+      setNotificationStatus(
+        getLastPushRegistrationResult()?.status ?? 'Not configured'
+      );
+      setExpoPushToken(getLastPushRegistrationResult()?.token ?? null);
       setError(result.error);
     } catch (err) {
       setRegistrationStatus('Error');
+      setNotificationStatus('Not configured');
       setError(err instanceof Error ? err.message : 'Failed to load profile.');
     } finally {
       setLoading(false);
@@ -96,10 +123,14 @@ export function useProfile() {
         if (!updated) {
           throw new Error('Could not save display name.');
         }
-        patchLastRegisteredUser(updated);
-        setUser(updated);
+        const merged: UnionUser = {
+          ...updated,
+          expoPushToken: updated.expoPushToken ?? expoPushToken,
+        };
+        patchLastRegisteredUser(merged);
+        setUser(merged);
         setRegistrationStatus('Registered');
-        return updated;
+        return merged;
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Could not save display name.';
@@ -109,7 +140,7 @@ export function useProfile() {
         setSaving(false);
       }
     },
-    [unionId]
+    [expoPushToken, unionId]
   );
 
   return {
@@ -120,6 +151,7 @@ export function useProfile() {
     unionId,
     registrationStatus,
     notificationStatus,
+    expoPushToken,
     error,
     refresh,
     saveDisplayName,

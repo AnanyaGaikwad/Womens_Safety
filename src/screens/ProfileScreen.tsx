@@ -13,9 +13,9 @@ import { useProfile } from '../hooks/useProfile';
 import { colors } from '../theme/colors';
 
 /**
- * Sprint 4 Milestone 3 — Profile.
+ * Sprint 4 — Profile.
  * Display name is editable; Union ID / statuses are read-only.
- * Push + QR pairing arrive in later milestones.
+ * Milestone 4 updates notification status from Expo push registration.
  */
 export function ProfileScreen() {
   const {
@@ -26,6 +26,7 @@ export function ProfileScreen() {
     unionId,
     registrationStatus,
     notificationStatus,
+    expoPushToken,
     error,
     refresh,
     saveDisplayName,
@@ -131,8 +132,17 @@ export function ProfileScreen() {
               <Text style={styles.label}>Notification status</Text>
               <Text style={styles.value}>{notificationStatus}</Text>
               <Text style={styles.hint}>
-                Push notifications will be configured in a later milestone.
+                {notificationStatus === 'Configured'
+                  ? 'Expo push token registered for this device.'
+                  : notificationStatus === 'Permission denied'
+                    ? 'Enable notifications in system settings to receive guardian alerts.'
+                    : 'Push setup is unavailable on this device or build.'}
               </Text>
+              {expoPushToken ? (
+                <Text style={styles.token} selectable>
+                  {expoPushToken}
+                </Text>
+              ) : null}
             </View>
             <View style={styles.stat}>
               <Text style={styles.label}>Registration status</Text>
@@ -223,6 +233,12 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans_400Regular',
     fontSize: 13,
     lineHeight: 18,
+  },
+  token: {
+    color: colors.inkMuted,
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 11,
+    lineHeight: 16,
   },
   input: {
     color: colors.ink,

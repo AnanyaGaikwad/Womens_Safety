@@ -1,6 +1,5 @@
 /**
- * Firestore `users/{uid}` document (Sprint 4 Milestone 2).
- * Push token and profile editing arrive in later milestones.
+ * Firestore `users/{uid}` document (Sprint 4).
  */
 
 export type UnionUser = {
@@ -8,6 +7,8 @@ export type UnionUser = {
   displayName: string;
   /** Epoch ms when the user document was first created. */
   createdAt: number;
+  /** Expo push token when notification registration succeeds. */
+  expoPushToken?: string | null;
 };
 
 export function defaultDisplayName(uid: string): string {

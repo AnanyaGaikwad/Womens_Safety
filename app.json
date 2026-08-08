@@ -9,11 +9,12 @@
     "scheme": "union",
     "ios": {
       "supportsTablet": true,
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Union listens on-device for screams, distress sounds, and your verbal safe-word to start a silent evidence recorder.",
         "NSPhotoLibraryUsageDescription": "Union uses your photo library only to attach an optional guardian profile photo stored on this device.",
         "NSLocationWhenInUseUsageDescription": "Union uses your location only to attach GPS coordinates to a local emergency alert for your guardians.",
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": ["audio", "remote-notification"]
       },
       "bundleIdentifier": "com.union.soundguard"
     },
@@ -24,12 +25,14 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "RECORD_AUDIO",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_MICROPHONE"
+        "FOREGROUND_SERVICE_MICROPHONE",
+        "POST_NOTIFICATIONS"
       ],
       "package": "com.union.soundguard",
       "predictiveBackGestureEnabled": false
@@ -55,6 +58,13 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Allow Union to use your location to include GPS in a local emergency alert for your guardians."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#2F9B86",
+          "defaultChannel": "union-alerts"
         }
       ]
     ]
