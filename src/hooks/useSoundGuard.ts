@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AlertService } from '../services/AlertService';
 import { EvidenceRecorder } from '../services/evidenceRecorder';
 import { SoundMonitor } from '../services/soundMonitor';
 import {
@@ -7,6 +8,7 @@ import {
   persistEvents,
   saveSettings,
 } from '../services/settingsStorage';
+import { EmergencyAlert } from '../types/alert';
 import {
   DEFAULT_SETTINGS,
   DetectionEvent,
@@ -29,6 +31,7 @@ export function useSoundGuard() {
   const [error, setError] = useState<string | null>(null);
   const [recordingEvidence, setRecordingEvidence] = useState(false);
   const [lastTrigger, setLastTrigger] = useState<DetectionEvent | null>(null);
+  const [activeAlert, setActiveAlert] = useState<EmergencyAlert | null>(null);
   const [ready, setReady] = useState(false);
 
   const monitorRef = useRef<SoundMonitor | null>(null);
@@ -77,6 +80,29 @@ export function useSoundGuard() {
     });
   }, []);
 
+  const resumeMonitoring = useCallback(async () => {
+    if (!armedRef.current) {
+      setStatus((current) => (current === 'triggered' ? 'idle' : current));
+      return;
+    }
+    try {
+      const monitor = new SoundMonitor(settingsRef.current);
+      attachMonitorListeners(monitor);
+      await monitor.start();
+      monitorRef.current = monitor;
+      setStatus('listening');
+    } catch (err) {
+      setStatus('error');
+      setArmed(false);
+      armedRef.current = false;
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to resume listening after emergency pipeline.'
+      );
+    }
+  }, [attachMonitorListeners]);
+
   const handleDetection = useCallback(
     async (kind: DetectionKind, confidence: number, note: string) => {
       if (handlingRef.current) return;
@@ -84,11 +110,14 @@ export function useSoundGuard() {
       setStatus('triggered');
 
       const shouldResume = armedRef.current;
+
+      // 1. stop listening
       if (monitorRef.current) {
         await monitorRef.current.stop();
         monitorRef.current = null;
       }
 
+      // 2. record evidence
       let evidenceUri: string | null = null;
       try {
         setRecordingEvidence(true);
@@ -113,6 +142,26 @@ export function useSoundGuard() {
         return next;
       });
 
+      // 3–7. GPS → guardians → simulate delivery → save history (AlertService)
+      let alert: EmergencyAlert | null = null;
+      try {
+        alert = await AlertService.triggerEmergency({
+          reason: kind,
+          note,
+          confidence,
+          evidenceUri,
+          evidenceRecording: true,
+        });
+        setActiveAlert(alert);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Emergency alert pipeline failed.'
+        );
+      }
+
+      // Evidence capture window, then finalize + resume (steps 8–9 continue via UI/nav)
       setTimeout(async () => {
         const finalUri = await evidenceRef.current.stop();
         if (finalUri) {
@@ -128,24 +177,10 @@ export function useSoundGuard() {
           );
         }
         setRecordingEvidence(false);
+        await AlertService.updateActiveEvidence(finalUri, false);
 
         if (shouldResume && armedRef.current) {
-          try {
-            const monitor = new SoundMonitor(settingsRef.current);
-            attachMonitorListeners(monitor);
-            await monitor.start();
-            monitorRef.current = monitor;
-            setStatus('listening');
-          } catch (err) {
-            setStatus('error');
-            setArmed(false);
-            armedRef.current = false;
-            setError(
-              err instanceof Error
-                ? err.message
-                : 'Failed to resume listening after evidence capture.'
-            );
-          }
+          await resumeMonitoring();
         } else {
           setStatus((current) => (current === 'triggered' ? 'idle' : current));
         }
@@ -153,7 +188,7 @@ export function useSoundGuard() {
         handlingRef.current = false;
       }, 12000);
     },
-    [attachMonitorListeners]
+    [resumeMonitoring]
   );
 
   useEffect(() => {
@@ -220,6 +255,36 @@ export function useSoundGuard() {
     });
   }, []);
 
+  const dismissActiveAlert = useCallback(() => {
+    AlertService.dismissActiveAlert();
+    setActiveAlert(null);
+    setLastTrigger(null);
+    setStatus((current) => {
+      if (current !== 'triggered') return current;
+      return armedRef.current ? 'listening' : 'idle';
+    });
+  }, []);
+
+  const returnToMonitoring = useCallback(async () => {
+    AlertService.dismissActiveAlert();
+    setActiveAlert(null);
+    setLastTrigger(null);
+    if (!armedRef.current) {
+      armedRef.current = true;
+      setArmed(true);
+    }
+    // Evidence capture still owns the mic — automatic resume runs when it finishes.
+    if (evidenceRef.current.isRecording || handlingRef.current) {
+      setStatus('triggered');
+      return;
+    }
+    if (!monitorRef.current) {
+      await resumeMonitoring();
+    } else {
+      setStatus('listening');
+    }
+  }, [resumeMonitoring]);
+
   const simulate = useCallback(
     (kind: DetectionKind) => {
       if (!monitorRef.current) {
@@ -248,11 +313,14 @@ export function useSoundGuard() {
     error,
     recordingEvidence,
     lastTrigger,
+    activeAlert,
     start,
     stop,
     updateSafeWord,
     clearEvents,
     dismissTrigger,
+    dismissActiveAlert,
+    returnToMonitoring,
     simulate,
   };
 }

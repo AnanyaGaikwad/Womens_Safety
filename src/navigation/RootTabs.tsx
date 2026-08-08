@@ -1,13 +1,10 @@
 import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GuardiansScreen } from '../screens/GuardiansScreen';
 import { SoundGuardScreen } from '../screens/SoundGuardScreen';
 import { colors } from '../theme/colors';
-
-export type RootTabParamList = {
-  SoundGuard: undefined;
-  Guardians: undefined;
-};
+import { RootTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -26,7 +23,7 @@ function TabLabel({
         fontSize: 12,
         letterSpacing: 0.4,
         textTransform: 'uppercase',
-        marginBottom: 6,
+        marginBottom: 2,
       }}
     >
       {label}
@@ -35,6 +32,9 @@ function TabLabel({
 }
 
 export function RootTabs() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 8);
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -43,12 +43,15 @@ export function RootTabs() {
           backgroundColor: colors.bgElevated,
           borderTopColor: colors.line,
           borderTopWidth: 1,
-          height: 64,
+          height: 52 + bottomInset,
           paddingTop: 8,
+          paddingBottom: bottomInset,
         },
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.inkDim,
         tabBarIcon: () => null,
+        tabBarIconStyle: { display: 'none' },
+        tabBarLabelPosition: 'below-icon',
       }}
     >
       <Tab.Screen

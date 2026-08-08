@@ -12,6 +12,7 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Union listens on-device for screams, distress sounds, and your verbal safe-word to start a silent evidence recorder.",
         "NSPhotoLibraryUsageDescription": "Union uses your photo library only to attach an optional guardian profile photo stored on this device.",
+        "NSLocationWhenInUseUsageDescription": "Union uses your location only to attach GPS coordinates to a local emergency alert for your guardians.",
         "UIBackgroundModes": ["audio"]
       },
       "bundleIdentifier": "com.union.soundguard"
@@ -25,6 +26,8 @@
       },
       "permissions": [
         "RECORD_AUDIO",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_MICROPHONE"
       ],
@@ -46,6 +49,12 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow Union to attach an optional guardian profile photo stored on this device."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Union to use your location to include GPS in a local emergency alert for your guardians."
         }
       ]
     ]

@@ -9,7 +9,7 @@ import {
   DMSans_600SemiBold,
 } from '@expo-google-fonts/dm-sans';
 import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
-import { RootTabs } from './src/navigation/RootTabs';
+import { RootNavigator } from './src/navigation/RootNavigator';
 import { colors } from './src/theme/colors';
 
 const navTheme = {
@@ -44,7 +44,7 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer theme={navTheme}>
         <StatusBar style="light" />
-        <RootTabs />
+        <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>
   );
