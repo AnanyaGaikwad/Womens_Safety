@@ -1,5 +1,6 @@
 import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GuardiansScreen } from '../screens/GuardiansScreen';
 import { SoundGuardScreen } from '../screens/SoundGuardScreen';
 import { colors } from '../theme/colors';
@@ -10,6 +11,9 @@ export type RootTabParamList = {
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
+
+/** Content height above the home-indicator inset. */
+const TAB_BAR_CONTENT_HEIGHT = 56;
 
 function TabLabel({
   label,
@@ -26,7 +30,6 @@ function TabLabel({
         fontSize: 12,
         letterSpacing: 0.4,
         textTransform: 'uppercase',
-        marginBottom: 6,
       }}
     >
       {label}
@@ -35,6 +38,9 @@ function TabLabel({
 }
 
 export function RootTabs() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 8);
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -43,8 +49,13 @@ export function RootTabs() {
           backgroundColor: colors.bgElevated,
           borderTopColor: colors.line,
           borderTopWidth: 1,
-          height: 64,
-          paddingTop: 8,
+          height: TAB_BAR_CONTENT_HEIGHT + bottomInset,
+          paddingTop: 10,
+          paddingBottom: bottomInset,
+        },
+        tabBarItemStyle: {
+          justifyContent: 'center',
+          alignItems: 'center',
         },
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.inkDim,
