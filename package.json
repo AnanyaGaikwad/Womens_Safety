@@ -38,6 +38,7 @@
     "check:analyzer": "tsx scripts/check-analyzer.ts",
     "check:guardians": "tsx scripts/check-guardians.ts",
     "check:alerts": "tsx scripts/check-alerts.ts",
+    "check:registration": "tsx scripts/check-registration.ts",
     "typecheck": "tsc --noEmit"
   },
   "private": true

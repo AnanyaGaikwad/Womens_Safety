@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,6 +11,7 @@ import {
 } from '@expo-google-fonts/dm-sans';
 import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { ensureAnonymousRegistration } from './src/services/AuthService';
 import { initializeFirebase } from './src/services/firebase';
 import { colors } from './src/theme/colors';
 
@@ -36,6 +38,11 @@ export default function App() {
     DMSans_600SemiBold,
     InstrumentSerif_400Regular,
   });
+
+  // Milestone 2: anonymous auth + users/{uid} upsert (non-blocking, soft-fail).
+  useEffect(() => {
+    void ensureAnonymousRegistration();
+  }, []);
 
   if (!fontsLoaded) {
     return (
