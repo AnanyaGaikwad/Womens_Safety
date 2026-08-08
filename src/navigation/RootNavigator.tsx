@@ -4,6 +4,7 @@ import { DeliveryBannerStack } from '../components/DeliveryBannerStack';
 import { SoundGuardProvider } from '../hooks/SoundGuardContext';
 import { AlertHistoryScreen } from '../screens/AlertHistoryScreen';
 import { EmergencyAlertScreen } from '../screens/EmergencyAlertScreen';
+import { MyQrCodeScreen } from '../screens/MyQrCodeScreen';
 import { RootTabs } from './RootTabs';
 import { RootStackParamList } from './types';
 
@@ -23,6 +24,11 @@ export function RootNavigator() {
           <Stack.Screen
             name="AlertHistory"
             component={AlertHistoryScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="MyQrCode"
+            component={MyQrCodeScreen}
             options={{ animation: 'slide_from_right' }}
           />
         </Stack.Navigator>

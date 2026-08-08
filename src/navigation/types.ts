@@ -8,4 +8,5 @@ export type RootStackParamList = {
   MainTabs: undefined;
   EmergencyAlert: undefined;
   AlertHistory: undefined;
+  MyQrCode: undefined;
 };

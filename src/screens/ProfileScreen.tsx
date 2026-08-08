@@ -9,15 +9,20 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useProfile } from '../hooks/useProfile';
+import { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
 
 /**
  * Sprint 4 — Profile.
  * Display name is editable; Union ID / statuses are read-only.
- * Milestone 4 updates notification status from Expo push registration.
+ * Milestone 5 links to My QR Code (UID-only).
  */
 export function ProfileScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     ready,
     loading,
@@ -125,6 +130,15 @@ export function ProfileScreen() {
             <Text style={styles.hint}>
               This ID identifies you on the Union network. It cannot be changed.
             </Text>
+            <Pressable
+              onPress={() => navigation.navigate('MyQrCode')}
+              style={({ pressed }) => [
+                styles.qrLink,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.qrLinkText}>My QR Code</Text>
+            </Pressable>
           </View>
 
           <View style={styles.row}>
@@ -233,6 +247,18 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans_400Regular',
     fontSize: 13,
     lineHeight: 18,
+  },
+  qrLink: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  qrLinkText: {
+    color: colors.brand,
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 14,
   },
   token: {
     color: colors.inkMuted,
