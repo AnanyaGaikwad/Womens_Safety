@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "108133047280",
+    "project_id": "union-7183a",
+    "storage_bucket": "union-7183a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:108133047280:android:b2b63f789826cb7f1f9b35",
+        "android_client_info": {
+          "package_name": "com.union.soundguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC235S9GAEdItarEg6xAXR3-3M2Jki8t40"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

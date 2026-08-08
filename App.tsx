@@ -10,7 +10,12 @@ import {
 } from '@expo-google-fonts/dm-sans';
 import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { initializeFirebase } from './src/services/firebase';
 import { colors } from './src/theme/colors';
+
+// Milestone 1: soft-fail Firebase JS SDK bootstrap (Auth + Firestore).
+// Sprint 1–3 continue if Firebase is unavailable.
+initializeFirebase();
 
 const navTheme = {
   ...DarkTheme,
