@@ -11,6 +11,7 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Union listens on-device for screams, distress sounds, and your verbal safe-word to start a silent evidence recorder.",
+        "NSPhotoLibraryUsageDescription": "Union uses your photo library only to attach an optional guardian profile photo stored on this device.",
         "UIBackgroundModes": ["audio"]
       },
       "bundleIdentifier": "com.union.soundguard"
@@ -39,6 +40,12 @@
         "expo-av",
         {
           "microphonePermission": "Allow Union to access your microphone for on-device scream, distress, and safe-word detection."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Union to attach an optional guardian profile photo stored on this device."
         }
       ]
     ]

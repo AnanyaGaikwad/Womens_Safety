@@ -12,13 +12,21 @@ Continuous local listening for:
 
 When a pattern is detected, Union **silently starts a local evidence recorder** and logs the event. Mesh alarms and encrypted live location are intentionally deferred.
 
+### Sprint 2 — Guardians
+- Add / edit / remove guardians
+- Enable or disable guardians
+- Optional local profile photo
+- Local AsyncStorage persistence
+- `GuardianService.notifyGuardians()` stub for future emergency alerts
+
 ## Stack
 
 - Expo SDK 54 / React Native (compatible with current App Store Expo Go)
+- React Navigation bottom tabs (Guard · Guardians)
 - `expo-av` metering on native
 - Web Audio `AnalyserNode` on web
 - Web Speech API for safe-word recognition (web)
-- AsyncStorage for settings + detection history
+- AsyncStorage for settings, detection history, and guardians
 
 ## Run
 
@@ -37,9 +45,12 @@ Use the **Expo Go** app from the App Store / Play Store (SDK 54). Allow micropho
 ```
 App.tsx
 src/
-  components/     # orb, meter, safe-word field, alerts, log
-  hooks/          # useSoundGuard
-  services/       # monitor, analyzer, evidence recorder, storage
+  components/           # sound guard UI
+  components/guardians/ # GuardianCard, form, stats, empty state
+  hooks/                # useSoundGuard, useGuardians
+  navigation/           # bottom tabs
+  screens/              # SoundGuardScreen, GuardiansScreen
+  services/             # audio + GuardianService
   theme/
   types/
 ```
