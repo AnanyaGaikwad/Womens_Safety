@@ -9,4 +9,5 @@ export type RootStackParamList = {
   EmergencyAlert: undefined;
   AlertHistory: undefined;
   MyQrCode: undefined;
+  PairGuardian: undefined;
 };

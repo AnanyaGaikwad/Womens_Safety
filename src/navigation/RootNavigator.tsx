@@ -5,6 +5,7 @@ import { SoundGuardProvider } from '../hooks/SoundGuardContext';
 import { AlertHistoryScreen } from '../screens/AlertHistoryScreen';
 import { EmergencyAlertScreen } from '../screens/EmergencyAlertScreen';
 import { MyQrCodeScreen } from '../screens/MyQrCodeScreen';
+import { PairGuardianScreen } from '../screens/PairGuardianScreen';
 import { RootTabs } from './RootTabs';
 import { RootStackParamList } from './types';
 
@@ -29,6 +30,11 @@ export function RootNavigator() {
           <Stack.Screen
             name="MyQrCode"
             component={MyQrCodeScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="PairGuardian"
+            component={PairGuardianScreen}
             options={{ animation: 'slide_from_right' }}
           />
         </Stack.Navigator>

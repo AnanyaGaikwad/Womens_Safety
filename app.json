@@ -66,6 +66,14 @@
           "color": "#2F9B86",
           "defaultChannel": "union-alerts"
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Union to scan a guardian’s Union QR code to send a pairing request.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
       ]
     ]
   }

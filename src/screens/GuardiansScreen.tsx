@@ -10,15 +10,23 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GuardianCard } from '../components/guardians/GuardianCard';
 import { GuardianEmptyState } from '../components/guardians/GuardianEmptyState';
 import { GuardianFormModal } from '../components/guardians/GuardianFormModal';
 import { GuardianStats } from '../components/guardians/GuardianStats';
+import { IncomingRequestCard } from '../components/guardians/IncomingRequestCard';
+import { useGuardianRequests } from '../hooks/useGuardianRequests';
 import { useGuardians } from '../hooks/useGuardians';
+import { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
 import { Guardian, GuardianInput } from '../types/guardian';
+import { GuardianRequest } from '../types/guardianRequest';
 
 export function GuardiansScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     ready,
     guardians,
@@ -32,9 +40,27 @@ export function GuardiansScreen() {
     stubNotify,
   } = useGuardians();
 
+  const {
+    ready: requestsReady,
+    loading: requestsLoading,
+    incoming,
+    outgoing,
+    error: requestsError,
+    refresh: refreshRequests,
+    accept,
+    reject,
+  } = useGuardianRequests();
+
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editing, setEditing] = useState<Guardian | null>(null);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshRequests();
+    }, [refreshRequests])
+  );
 
   const openCreate = useCallback(() => {
     setFormMode('create');
@@ -83,6 +109,46 @@ export function GuardiansScreen() {
     [remove]
   );
 
+  const handleAccept = useCallback(
+    async (request: GuardianRequest) => {
+      setRespondingId(request.id);
+      try {
+        await accept(request.id);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Could not accept request.';
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert(message);
+        } else {
+          Alert.alert('Accept failed', message);
+        }
+      } finally {
+        setRespondingId(null);
+      }
+    },
+    [accept]
+  );
+
+  const handleReject = useCallback(
+    async (request: GuardianRequest) => {
+      setRespondingId(request.id);
+      try {
+        await reject(request.id);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Could not reject request.';
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert(message);
+        } else {
+          Alert.alert('Reject failed', message);
+        }
+      } finally {
+        setRespondingId(null);
+      }
+    },
+    [reject]
+  );
+
   if (!ready) {
     return (
       <View style={styles.boot}>
@@ -107,6 +173,52 @@ export function GuardiansScreen() {
           </View>
 
           <GuardianStats total={totalCount} active={activeCount} />
+
+          <View style={styles.networkActions}>
+            <Pressable
+              onPress={() => navigation.navigate('PairGuardian')}
+              style={({ pressed }) => [styles.pairBtn, pressed && styles.pressed]}
+            >
+              <Text style={styles.pairBtnText}>Pair Guardian</Text>
+            </Pressable>
+            <Text style={styles.networkHint}>
+              Send a network request with a Union ID or QR scan. Local contacts
+              below still work offline.
+            </Text>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>Incoming requests</Text>
+              {requestsLoading ? (
+                <ActivityIndicator color={colors.brand} />
+              ) : null}
+            </View>
+            {requestsError ? (
+              <Text style={styles.error}>{requestsError}</Text>
+            ) : null}
+            {requestsReady && incoming.length === 0 ? (
+              <Text style={styles.empty}>No pending guardian requests.</Text>
+            ) : (
+              <View style={styles.requestList}>
+                {incoming.map((request) => (
+                  <IncomingRequestCard
+                    key={request.id}
+                    request={request}
+                    busy={respondingId === request.id}
+                    onAccept={(item) => void handleAccept(item)}
+                    onReject={(item) => void handleReject(item)}
+                  />
+                ))}
+              </View>
+            )}
+            {outgoing.length > 0 ? (
+              <Text style={styles.outgoing}>
+                {outgoing.length} outgoing pending request
+                {outgoing.length === 1 ? '' : 's'}
+              </Text>
+            ) : null}
+          </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -202,6 +314,44 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     maxWidth: 360,
   },
+  networkActions: {
+    gap: 8,
+  },
+  pairBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: colors.brandSoft,
+  },
+  pairBtnText: {
+    color: colors.ink,
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 14,
+  },
+  networkHint: {
+    color: colors.inkDim,
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 13,
+    lineHeight: 18,
+    maxWidth: 360,
+  },
+  section: {
+    gap: 10,
+  },
+  requestList: {
+    gap: 10,
+  },
+  empty: {
+    color: colors.inkMuted,
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  outgoing: {
+    color: colors.inkDim,
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 13,
+  },
   list: {
     gap: 4,
   },
@@ -210,6 +360,7 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     justifyContent: 'space-between',
     marginBottom: 4,
+    gap: 12,
   },
   listTitle: {
     color: colors.ink,
