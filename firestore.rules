@@ -42,7 +42,13 @@ service cloud.firestore {
 
     // Milestone 7 — permanent guardian relationships (not public).
     match /guardianRelationships/{relationshipId} {
-      allow get, list: if signedIn()
+      // getDoc before create must be allowed when the doc does not exist yet.
+      allow get: if signedIn()
+        && (resource == null
+          || resource.data.ownerUid == request.auth.uid
+          || resource.data.guardianUid == request.auth.uid);
+
+      allow list: if signedIn()
         && (resource.data.ownerUid == request.auth.uid
           || resource.data.guardianUid == request.auth.uid);
 
