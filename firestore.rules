@@ -42,9 +42,18 @@ service cloud.firestore {
 
     // Milestone 7 — permanent guardian relationships (not public).
     match /guardianRelationships/{relationshipId} {
-      allow get, list: if signedIn()
-        && (resource.data.ownerUid == request.auth.uid
-          || resource.data.guardianUid == request.auth.uid);
+      allow get: if signedIn()
+    && (
+      resource == null
+      || resource.data.ownerUid == request.auth.uid
+      || resource.data.guardianUid == request.auth.uid
+    );
+
+  allow list: if signedIn()
+    && (
+      resource.data.ownerUid == request.auth.uid
+      || resource.data.guardianUid == request.auth.uid
+    );
 
       // Created by the protected user (request target) on accept.
       allow create: if signedIn()
