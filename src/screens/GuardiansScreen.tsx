@@ -17,11 +17,14 @@ import { GuardianEmptyState } from '../components/guardians/GuardianEmptyState';
 import { GuardianFormModal } from '../components/guardians/GuardianFormModal';
 import { GuardianStats } from '../components/guardians/GuardianStats';
 import { IncomingRequestCard } from '../components/guardians/IncomingRequestCard';
+import { NetworkRelationshipCard } from '../components/guardians/NetworkRelationshipCard';
 import { useGuardianRequests } from '../hooks/useGuardianRequests';
 import { useGuardians } from '../hooks/useGuardians';
+import { useNetworkGuardians } from '../hooks/useNetworkGuardians';
 import { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
 import { Guardian, GuardianInput } from '../types/guardian';
+import { GuardianRelationship } from '../types/guardianRelationship';
 import { GuardianRequest } from '../types/guardianRequest';
 
 export function GuardiansScreen() {
@@ -51,6 +54,16 @@ export function GuardiansScreen() {
     reject,
   } = useGuardianRequests();
 
+  const {
+    loading: networkLoading,
+    myGuardians,
+    peopleIProtect,
+    error: networkError,
+    refresh: refreshNetwork,
+    toggleEnabled: toggleNetworkEnabled,
+    remove: removeNetwork,
+  } = useNetworkGuardians();
+
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editing, setEditing] = useState<Guardian | null>(null);
@@ -59,7 +72,8 @@ export function GuardiansScreen() {
   useFocusEffect(
     useCallback(() => {
       void refreshRequests();
-    }, [refreshRequests])
+      void refreshNetwork();
+    }, [refreshNetwork, refreshRequests])
   );
 
   const openCreate = useCallback(() => {
@@ -109,11 +123,39 @@ export function GuardiansScreen() {
     [remove]
   );
 
+  const confirmNetworkRemove = useCallback(
+    (relationship: GuardianRelationship, perspective: 'owner' | 'guardian') => {
+      const label =
+        perspective === 'owner'
+          ? relationship.guardianDisplayName
+          : relationship.ownerDisplayName;
+      const message =
+        perspective === 'owner'
+          ? `Remove ${label} from My Guardians?`
+          : `Stop protecting ${label}?`;
+
+      const run = () => {
+        void removeNetwork(relationship.id);
+      };
+
+      if (Platform.OS === 'web') {
+        if (typeof window !== 'undefined' && window.confirm(message)) run();
+        return;
+      }
+      Alert.alert('Remove relationship', message, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: run },
+      ]);
+    },
+    [removeNetwork]
+  );
+
   const handleAccept = useCallback(
     async (request: GuardianRequest) => {
       setRespondingId(request.id);
       try {
         await accept(request.id);
+        await refreshNetwork();
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Could not accept request.';
@@ -126,7 +168,7 @@ export function GuardiansScreen() {
         setRespondingId(null);
       }
     },
-    [accept]
+    [accept, refreshNetwork]
   );
 
   const handleReject = useCallback(
@@ -182,8 +224,8 @@ export function GuardiansScreen() {
               <Text style={styles.pairBtnText}>Pair Guardian</Text>
             </Pressable>
             <Text style={styles.networkHint}>
-              Send a network request with a Union ID or QR scan. Local contacts
-              below still work offline.
+              Network pairing uses Union IDs. Local contacts below still work
+              offline and are separate from network relationships.
             </Text>
           </View>
 
@@ -220,14 +262,68 @@ export function GuardiansScreen() {
             ) : null}
           </View>
 
+          <View style={styles.section}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>My Guardians</Text>
+              {networkLoading ? <ActivityIndicator color={colors.brand} /> : null}
+            </View>
+            {networkError ? <Text style={styles.error}>{networkError}</Text> : null}
+            {myGuardians.length === 0 ? (
+              <Text style={styles.empty}>
+                No network guardians yet. Accept a pairing request or ask someone
+                to scan your QR.
+              </Text>
+            ) : (
+              <View style={styles.requestList}>
+                {myGuardians.map((relationship) => (
+                  <NetworkRelationshipCard
+                    key={relationship.id}
+                    relationship={relationship}
+                    perspective="owner"
+                    allowToggle
+                    onToggleEnabled={(item, enabled) => {
+                      void toggleNetworkEnabled(item.id, enabled);
+                    }}
+                    onRemove={(item) => confirmNetworkRemove(item, 'owner')}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>People I Protect</Text>
+            </View>
+            {peopleIProtect.length === 0 ? (
+              <Text style={styles.empty}>
+                You are not a network guardian for anyone yet.
+              </Text>
+            ) : (
+              <View style={styles.requestList}>
+                {peopleIProtect.map((relationship) => (
+                  <NetworkRelationshipCard
+                    key={relationship.id}
+                    relationship={relationship}
+                    perspective="guardian"
+                    onRemove={(item) => confirmNetworkRemove(item, 'guardian')}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           {guardians.length === 0 ? (
-            <GuardianEmptyState onAdd={openCreate} />
+            <View style={styles.section}>
+              <Text style={styles.listTitle}>Local contacts</Text>
+              <GuardianEmptyState onAdd={openCreate} />
+            </View>
           ) : (
             <View style={styles.list}>
               <View style={styles.listHeader}>
-                <Text style={styles.listTitle}>Your circle</Text>
+                <Text style={styles.listTitle}>Local contacts</Text>
                 <Pressable
                   onPress={openCreate}
                   style={({ pressed }) => pressed && styles.pressed}

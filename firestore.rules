@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // Preserve existing user profile access used by Sprint 4 pairing.
+    match /users/{userId} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if isSelf(userId);
+      allow delete: if false;
+    }
+
+    // Preserve guardian request behavior verified in Milestone 6.
+    match /guardianRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.requesterUid == request.auth.uid
+        && request.resource.data.targetUid is string
+        && request.resource.data.targetUid != request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      allow get, list: if signedIn()
+        && (resource.data.requesterUid == request.auth.uid
+          || resource.data.targetUid == request.auth.uid);
+
+      // Only the target may change status after creation.
+      allow update: if signedIn()
+        && resource.data.targetUid == request.auth.uid
+        && request.resource.data.requesterUid == resource.data.requesterUid
+        && request.resource.data.targetUid == resource.data.targetUid
+        && request.resource.data.status in ['accepted', 'rejected'];
+
+      allow delete: if false;
+    }
+
+    // Milestone 7 — permanent guardian relationships (not public).
+    match /guardianRelationships/{relationshipId} {
+      allow get, list: if signedIn()
+        && (resource.data.ownerUid == request.auth.uid
+          || resource.data.guardianUid == request.auth.uid);
+
+      // Created by the protected user (request target) on accept.
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.guardianUid is string
+        && request.resource.data.guardianUid != request.auth.uid
+        && request.resource.data.accepted == true;
+
+      allow update: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.guardianUid == resource.data.guardianUid;
+
+      // Owner or guardian may remove the relationship.
+      allow delete: if signedIn()
+        && (resource.data.ownerUid == request.auth.uid
+          || resource.data.guardianUid == request.auth.uid);
+    }
+  }
+}

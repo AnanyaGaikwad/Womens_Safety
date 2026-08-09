@@ -12,10 +12,13 @@ import {
 } from 'firebase/firestore';
 import { GuardianRequest, GuardianRequestStatus } from '../types/guardianRequest';
 import { getFirebaseAuth, getFirebaseFirestore, isFirebaseReady } from './firebase';
+import {
+  hasAcceptedRelationship,
+  upsertRelationshipFromAcceptedRequest,
+} from './GuardianRelationshipService';
 import { getUserDocument } from './UserService';
 
 const REQUESTS = 'guardianRequests';
-const RELATIONSHIPS = 'guardianRelationships';
 
 function createdAtToMillis(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -60,46 +63,14 @@ function requireAuthUid(): string {
 }
 
 /**
- * Soft check for an existing accepted network relationship (Milestone 7 docs).
+ * Soft check for an existing accepted network relationship.
  * Returns false if the collection is empty or unreadable.
  */
 async function alreadyRelated(
   uidA: string,
   uidB: string
 ): Promise<boolean> {
-  const db = getFirebaseFirestore();
-  if (!db) return false;
-
-  try {
-    const asOwner = await getDocs(
-      query(collection(db, RELATIONSHIPS), where('ownerUid', '==', uidA))
-    );
-    for (const snap of asOwner.docs) {
-      const data = snap.data();
-      if (
-        data.guardianUid === uidB &&
-        (data.accepted === true || data.status === 'accepted')
-      ) {
-        return true;
-      }
-    }
-
-    const asGuardian = await getDocs(
-      query(collection(db, RELATIONSHIPS), where('ownerUid', '==', uidB))
-    );
-    for (const snap of asGuardian.docs) {
-      const data = snap.data();
-      if (
-        data.guardianUid === uidA &&
-        (data.accepted === true || data.status === 'accepted')
-      ) {
-        return true;
-      }
-    }
-  } catch {
-    // Soft-fail: relationship collection may not exist yet (pre-Milestone 7).
-  }
-  return false;
+  return hasAcceptedRelationship(uidA, uidB);
 }
 
 async function hasPendingDuplicate(
@@ -233,7 +204,8 @@ export async function listOutgoingPendingRequests(): Promise<GuardianRequest[]> 
 
 /**
  * Accept or reject a request targeted at the current user.
- * Milestone 6 only updates status — no guardianRelationships write.
+ * Accept also upserts guardianRelationships (Milestone 7).
+ * Reject only updates request status — no relationship document.
  */
 export async function respondToGuardianRequest(
   requestId: string,
@@ -263,9 +235,14 @@ export async function respondToGuardianRequest(
   }
 
   await updateDoc(ref, { status });
-  const updated = await getDoc(ref);
-  if (!updated.exists()) {
-    return { ...current, status };
+  const updatedSnap = await getDoc(ref);
+  const updated = updatedSnap.exists()
+    ? mapRequest(updatedSnap.id, updatedSnap.data() as Record<string, unknown>)
+    : { ...current, status };
+
+  if (status === 'accepted') {
+    await upsertRelationshipFromAcceptedRequest(updated);
   }
-  return mapRequest(updated.id, updated.data() as Record<string, unknown>);
+
+  return updated;
 }

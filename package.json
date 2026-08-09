@@ -47,6 +47,7 @@
     "check:alerts": "tsx scripts/check-alerts.ts",
     "check:registration": "tsx scripts/check-registration.ts",
     "check:guardian-requests": "tsx scripts/check-guardian-requests.ts",
+    "check:relationships": "tsx scripts/check-relationships.ts",
     "typecheck": "tsc --noEmit"
   },
   "private": true
