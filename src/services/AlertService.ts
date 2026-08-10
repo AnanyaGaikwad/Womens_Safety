@@ -1,6 +1,7 @@
 import { GuardianService } from './GuardianService';
 import { AlertHistoryService } from './AlertHistoryService';
 import { LocationService } from './LocationService';
+import { sendEmergencyToNetworkGuardians } from './NetworkEmergencyPushService';
 import {
   DeliveryBanner,
   DeliveryStatus,
@@ -67,8 +68,8 @@ function logSimulatedDelivery(
 }
 
 /**
- * Offline emergency pipeline: GPS → enabled guardians → simulated delivery → history.
- * No Firebase / SMS / backend — console + local banners only.
+ * Emergency pipeline: GPS → local simulated guardians → history,
+ * plus best-effort Firebase network guardian Expo push (non-blocking).
  */
 class AlertServiceImpl {
   private session: EmergencySession = {
@@ -131,6 +132,10 @@ class AlertServiceImpl {
       recordingEvidence: Boolean(input.evidenceRecording),
       banners: [],
     });
+
+    // Network fan-out (best-effort, non-blocking): paired Firebase guardians → Expo Push.
+    console.log('[UNION PUSH DEBUG] AlertService network push invoked');
+    void sendEmergencyToNetworkGuardians(alert);
 
     const deliveries: GuardianDelivery[] = [];
 

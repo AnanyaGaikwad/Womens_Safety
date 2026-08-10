@@ -4,6 +4,7 @@ import { DeliveryBannerStack } from '../components/DeliveryBannerStack';
 import { SoundGuardProvider } from '../hooks/SoundGuardContext';
 import { AlertHistoryScreen } from '../screens/AlertHistoryScreen';
 import { EmergencyAlertScreen } from '../screens/EmergencyAlertScreen';
+import { GuardianAlertScreen } from '../screens/GuardianAlertScreen';
 import { MyQrCodeScreen } from '../screens/MyQrCodeScreen';
 import { PairGuardianScreen } from '../screens/PairGuardianScreen';
 import { RootTabs } from './RootTabs';
@@ -21,6 +22,11 @@ export function RootNavigator() {
             name="EmergencyAlert"
             component={EmergencyAlertScreen}
             options={{ animation: 'fade', gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="GuardianAlert"
+            component={GuardianAlertScreen}
+            options={{ animation: 'slide_from_bottom' }}
           />
           <Stack.Screen
             name="AlertHistory"

@@ -1,6 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DarkTheme,
+  createNavigationContainerRef,
+} from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -10,7 +14,9 @@ import {
   DMSans_600SemiBold,
 } from '@expo-google-fonts/dm-sans';
 import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
+import { useGuardianAlertNotificationNavigation } from './src/hooks/useGuardianAlertNotificationNavigation';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { RootStackParamList } from './src/navigation/types';
 import { ensureAnonymousRegistration } from './src/services/AuthService';
 import { initializeFirebase } from './src/services/firebase';
 import { ensurePushTokenRegistration } from './src/services/PushService';
@@ -32,6 +38,8 @@ const navTheme = {
   },
 };
 
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     DMSans_400Regular,
@@ -39,6 +47,9 @@ export default function App() {
     DMSans_600SemiBold,
     InstrumentSerif_400Regular,
   });
+
+  const navigationRefStable = useRef(navigationRef).current;
+  useGuardianAlertNotificationNavigation(navigationRefStable);
 
   // Milestone 2–4: anonymous auth, then soft-fail Expo push token registration.
   useEffect(() => {
@@ -61,7 +72,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navTheme}>
+      <NavigationContainer ref={navigationRef} theme={navTheme}>
         <StatusBar style="light" />
         <RootNavigator />
       </NavigationContainer>

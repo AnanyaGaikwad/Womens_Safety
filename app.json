@@ -75,6 +75,12 @@
           "recordAudioAndroid": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c56bd853-9a48-492f-8f6b-484a5e0b275a"
+      }
+    },
+    "owner": "ananyagaikwad_03"
   }
 }
